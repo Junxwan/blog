@@ -24,6 +24,18 @@
 
 1. 进程 线程 协程 Process v.s. Thread v.s. Coroutine
 
+   https://juejin.im/post/5b0014b7518825426e023666
+
+   https://www.imooc.com/article/31751
+
+   https://zhuanfou.com/ask/78120839_783
+
+   https://www.jianshu.com/p/f11724034d50
+
+   https://zhuanlan.zhihu.com/p/81390586
+
+   https://zhuanlan.zhihu.com/p/37754274
+
 2. 用户线程(user thread)与核心线程(kernel thread)
 
 3. Golang CSP
@@ -42,21 +54,23 @@
 
 10. golang GMP
 
-    https://colobu.com/2017/05/04/go-scheduler/
+   https://colobu.com/2017/05/04/go-scheduler/
 
-    https://juejin.im/post/5b7678f451882533110e8948
+   https://juejin.im/post/5b7678f451882533110e8948
 
-    https://juejin.im/post/5d9a9c12e51d45781420fb7e
+   https://juejin.im/post/5d9a9c12e51d45781420fb7e
 
-    https://studygolang.com/articles/11627
+   https://studygolang.com/articles/11627
 
-    https://tonybai.com/2017/06/23/an-intro-about-goroutine-scheduler/
+   https://tonybai.com/2017/06/23/an-intro-about-goroutine-scheduler/
 
-    http://skoo.me/go/2013/11/29/golang-schedule?utm_campaign=studygolang.com&utm_medium=studygolang.com&utm_source=studygolang.com
+   http://skoo.me/go/2013/11/29/golang-schedule?utm_campaign=studygolang.com&utm_medium=studygolang.com&utm_source=studygolang.com
 
-    https://www.zhihu.com/question/20862617/answer/131341519
+   https://www.zhihu.com/question/20862617/answer/131341519
 
-    https://www.zhihu.com/question/20862617/answer/27964865
+   https://www.zhihu.com/question/20862617/answer/27964865
+
+   https://blog.csdn.net/heiyeshuwu/article/details/51178268
 
 11. golang defer
 
@@ -184,6 +198,12 @@
 
     https://zhuanlan.zhihu.com/p/51855842
 
+    https://juejin.im/post/5c888a79e51d456ed11955a8#heading-5
+
+    http://lessisbetter.site/2019/07/06/go-memory-allocation/
+
+    http://dmitrysoshnikov.com/compilers/writing-a-memory-allocator/
+
 26. 內存
 
     https://yq.aliyun.com/articles/652551
@@ -218,10 +238,6 @@
 
     https://mp.weixin.qq.com/s/3gGbJaeuvx4klqcv34hmmw
 
-    http://dmitrysoshnikov.com/compilers/writing-a-memory-allocator/
-
-    http://lessisbetter.site/2019/07/06/go-memory-allocation/
-
 27. go gctrace
 
     https://www.jishuwen.com/d/2KE4
@@ -239,3 +255,23 @@
     https://github.com/golang/go/issues/14521
 
     https://stackoverflow.com/questions/37382600/cannot-free-memory-once-occupied-by-bytes-buffer/37383604#37383604
+
+28. cpu密集型 io密集型
+
+29. 虚拟内存
+
+30. go源碼閱讀參考
+
+    https://juejin.im/post/5d661014f265da03f04cdddc
+
+    https://github.com/tiancaiamao/go-internals
+
+    https://github.com/zboya/golang_runtime_reading
+
+    https://jingwei.link/2018/07/01/runtime-of-goroutine-creation.html
+
+    https://www.cnblogs.com/zkweb/p/7777525.html
+
+31. Plan9
+
+32. Linux huge page
