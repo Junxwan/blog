@@ -1,4 +1,4 @@
-# Golang源碼分析
+# Golang
 
 - [runtime](./runtime/README.md)
 

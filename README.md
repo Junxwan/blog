@@ -272,6 +272,10 @@
 
     https://www.cnblogs.com/zkweb/p/7777525.html
 
+    https://studygolang.com/articles/7212
+
+    https://github.com/golang/proposal/blob/master/design/19348-midstack-inlining.md
+
 31. Plan9
 
 32. Linux huge page
@@ -284,3 +288,12 @@
 
     http://www.zendei.com/article/37419.html
 
+34. Thread-local Storage
+
+35. 内联函数
+
+    https://zhuanlan.zhihu.com/p/50812510
+
+    https://www.zhihu.com/question/53082910
+
+    https://www.zhihu.com/question/45488363/answer/99426141
