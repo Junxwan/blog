@@ -275,3 +275,12 @@
 31. Plan9
 
 32. Linux huge page
+
+    https://zhuanlan.zhihu.com/p/34659353
+
+33. Transparent Huge pages
+
+    http://blog.itpub.net/26736162/viewspace-2214374/
+
+    http://www.zendei.com/article/37419.html
+
