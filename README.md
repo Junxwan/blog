@@ -290,6 +290,10 @@
 
 34. Thread-local Storage
 
+    https://link.zhihu.com/?target=https%3A//groups.google.com/d/msg/golang-nuts/IiWZ2hUuLDA/SNKYYZBelsYJ
+
+    https://www.jianshu.com/p/2c2d293f1f2b
+
 35. 内联函数
 
     https://zhuanlan.zhihu.com/p/50812510
@@ -297,3 +301,7 @@
     https://www.zhihu.com/question/53082910
 
     https://www.zhihu.com/question/45488363/answer/99426141
+
+36. 线程安全
+
+    https://www.zhihu.com/question/23244293
