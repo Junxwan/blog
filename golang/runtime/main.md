@@ -401,73 +401,73 @@ HugePages_Total:       0  # 0代表禁用
 
 ```go
 func schedinit() {
-	// raceinit must be the first call to race detector.
-	// In particular, it must be done before mallocinit below calls racemapshadow.
-	// 拿出G
+  // raceinit must be the first call to race detector.
+  // In particular, it must be done before mallocinit below calls racemapshadow.
+  // 拿出G
   _g_ := getg()
-	if raceenabled {
-		_g_.racectx, raceprocctx0 = raceinit()
-	}
-  
+  if raceenabled {
+    _g_.racectx, raceprocctx0 = raceinit()
+  }
+
   // 設定Ｍ最大數量
-	sched.maxmcount = 10000
-  
+  sched.maxmcount = 10000
+
   // 好像沒作用，主要是跟print trace stack log有關 
   // 至從該版本後好像就沒用了 https://github.com/golang/go/issues/19348
   // 但不知道為什麼還留著，設計跟有關 https://github.com/golang/proposal/blob/master/design/19348-midstack-inlining.md
-	tracebackinit()
-  
+  tracebackinit()
+
   // 待研究
-	moduledataverify()
-  
+  moduledataverify()
+
   // 初始化stack
-	stackinit()
-	mallocinit()
-	mcommoninit(_g_.m)
-	cpuinit()       // must run before alginit
-	alginit()       // maps must not be used before this call
-	modulesinit()   // provides activeModules
-	typelinksinit() // uses maps, activeModules
-	itabsinit()     // uses activeModules
+  stackinit()
+  mallocinit()
+  mcommoninit(_g_.m)
+  cpuinit()       // must run before alginit
+  alginit()       // maps must not be used before this call
+  modulesinit()   // provides activeModules
+  typelinksinit() // uses maps, activeModules
+  itabsinit()     // uses activeModules
 
-	msigsave(_g_.m)
-	initSigmask = _g_.m.sigmask
+  msigsave(_g_.m)
+  initSigmask = _g_.m.sigmask
 
-	goargs()
-	goenvs()
-	parsedebugvars()
-	gcinit()
+  goargs()
+  goenvs()
+  parsedebugvars()
+  gcinit()
 
-	sched.lastpoll = uint64(nanotime())
-	procs := ncpu
-	if n, ok := atoi32(gogetenv("GOMAXPROCS")); ok && n > 0 {
-		procs = n
-	}
-	if procresize(procs) != nil {
-		throw("unknown runnable goroutine during bootstrap")
-	}
+  sched.lastpoll = uint64(nanotime())
+  procs := ncpu
+  if n, ok := atoi32(gogetenv("GOMAXPROCS")); ok && n > 0 {
+    procs = n
+  }
+  if procresize(procs) != nil {
+    throw("unknown runnable goroutine during bootstrap")
+  }
 
-	// For cgocheck > 1, we turn on the write barrier at all times
-	// and check all pointer writes. We can't do this until after
-	// procresize because the write barrier needs a P.
-	if debug.cgocheck > 1 {
-		writeBarrier.cgo = true
-		writeBarrier.enabled = true
-		for _, p := range allp {
-			p.wbBuf.reset()
-		}
-	}
+  // For cgocheck > 1, we turn on the write barrier at all times
+  // and check all pointer writes. We can't do this until after
+  // procresize because the write barrier needs a P.
+  if debug.cgocheck > 1 {
+    writeBarrier.cgo = true
+    writeBarrier.enabled = true
+    for _, p := range allp {
+      p.wbBuf.reset()
+    }
+  }
 
-	if buildVersion == "" {
-		// Condition should never trigger. This code just serves
-		// to ensure runtime·buildVersion is kept in the resulting binary.
-		buildVersion = "unknown"
-	}
-	if len(modinfo) == 1 {
-		// Condition should never trigger. This code just serves
-		// to ensure runtime·modinfo is kept in the resulting binary.
-		modinfo = ""
-	}
+  if buildVersion == "" {
+    // Condition should never trigger. This code just serves
+    // to ensure runtime·buildVersion is kept in the resulting binary.
+    buildVersion = "unknown"
+  }
+  if len(modinfo) == 1 {
+    // Condition should never trigger. This code just serves
+    // to ensure runtime·modinfo is kept in the resulting binary.
+    modinfo = ""
+  }
 }
 ```
 
@@ -490,22 +490,22 @@ TODO
 
 ```go
 func stackinit() {
-	// _StackCacheSize => 32768 bit => 32K
+  // _StackCacheSize => 32768 bit => 32K
   // _PageMask => 8191 bit => 1k - 1 bit
   if _StackCacheSize&_PageMask != 0 {
-		throw("cache size must be a multiple of page size")
-	}
-  
+    throw("cache size must be a multiple of page size")
+  }
+
   // stackpool意思是global stack pool，主要是span List
   // init只是將span設為nil
-	for i := range stackpool {
-		stackpool[i].init()
-	}
-  
+  for i := range stackpool {
+    stackpool[i].init()
+  }
+
   // 
-	for i := range stackLarge.free {
-		stackLarge.free[i].init()
-	}
+  for i := range stackLarge.free {
+    stackLarge.free[i].init()
+  }
 }
 ```
 
@@ -521,198 +521,198 @@ func mallocinit() {
   // _TinySizeClass值是in8(2)
   // _TinySize值是16代表Tiny對象最大為16KB
   // 這裡主要檢查Tiny對象最大容量有沒有等於16KB
-	if class_to_size[_TinySizeClass] != _TinySize {
-		throw("bad TinySizeClass")
-	}
-  
+  if class_to_size[_TinySizeClass] != _TinySize {
+    throw("bad TinySizeClass")
+  }
+
   // 待研究
-	testdefersizes()
+  testdefersizes()
 
-	if heapArenaBitmapBytes&(heapArenaBitmapBytes-1) != 0 {
-		// heapBits expects modular arithmetic on bitmap
-		// addresses to work.
-		throw("heapArenaBitmapBytes not a power of 2")
-	}
+  if heapArenaBitmapBytes&(heapArenaBitmapBytes-1) != 0 {
+    // heapBits expects modular arithmetic on bitmap
+    // addresses to work.
+    throw("heapArenaBitmapBytes not a power of 2")
+  }
 
-	// Copy class sizes out for statistics table.
+  // Copy class sizes out for statistics table.
   // 將class size複製一份至memstats，主要是做統計用的
   // memstats是runtime.mstats，如果有做過golang metrics因該會覺得跟
   // runtime.MemStats很像，因為MemStats資料就是來自mstats
-	for i := range class_to_size {
-		memstats.by_size[i].size = uint32(class_to_size[i])
-	}
+  for i := range class_to_size {
+    memstats.by_size[i].size = uint32(class_to_size[i])
+  }
 
-	// Check physPageSize.
+  // Check physPageSize.
   // physPageSize指的是系統物理page size
   // 等於4096(4KB)，每個平台不見得都是4KB
-	if physPageSize == 0 {
-		// The OS init code failed to fetch the physical page size.
-		throw("failed to get system page size")
-	}
-  
+  if physPageSize == 0 {
+    // The OS init code failed to fetch the physical page size.
+    throw("failed to get system page size")
+  }
+
   // minPhysPageSize指的是系統物理page size下限
   // physPageSize不能小於minPhysPageSize
-	if physPageSize < minPhysPageSize {
-		print("system page size (", physPageSize, ") is smaller than minimum page size (", minPhysPageSize, ")\n")
-		throw("bad system page size")
-	}
-  
+  if physPageSize < minPhysPageSize {
+    print("system page size (", physPageSize, ") is smaller than minimum page size (", minPhysPageSize, ")\n")
+    throw("bad system page size")
+  }
+
   // physPageSize必須是2的次方
-	if physPageSize&(physPageSize-1) != 0 {
-		print("system page size (", physPageSize, ") must be a power of 2\n")
-		throw("bad system page size")
-	}
-  
+  if physPageSize&(physPageSize-1) != 0 {
+    print("system page size (", physPageSize, ") must be a power of 2\n")
+    throw("bad system page size")
+  }
+
   // physHugePageSize必須是2的次方，0也算 2^0
-	if physHugePageSize&(physHugePageSize-1) != 0 {
-		print("system huge page size (", physHugePageSize, ") must be a power of 2\n")
-		throw("bad system huge page size")
-	}
-  
+  if physHugePageSize&(physHugePageSize-1) != 0 {
+    print("system huge page size (", physHugePageSize, ") must be a power of 2\n")
+    throw("bad system huge page size")
+  }
+
   // 如果physHugePageSize不為零則要算出physHugePageSize是2的幾次方
-	if physHugePageSize != 0 {
-		// Since physHugePageSize is a power of 2, it suffices to increase
-		// physHugePageShift until 1<<physHugePageShift == physHugePageSize.
-		for 1<<physHugePageShift != physHugePageSize {
-			physHugePageShift++
-		}
-	}
+  if physHugePageSize != 0 {
+    // Since physHugePageSize is a power of 2, it suffices to increase
+    // physHugePageShift until 1<<physHugePageShift == physHugePageSize.
+    for 1<<physHugePageShift != physHugePageSize {
+      physHugePageShift++
+    }
+  }
 
-	// Initialize the heap.
-	mheap_.init()
-	_g_ := getg()
-	_g_.m.mcache = allocmcache()
+  // Initialize the heap.
+  mheap_.init()
+  _g_ := getg()
+  _g_.m.mcache = allocmcache()
 
-	// Create initial arena growth hints.
-	if sys.PtrSize == 8 {
-		// On a 64-bit machine, we pick the following hints
-		// because:
-		//
-		// 1. Starting from the middle of the address space
-		// makes it easier to grow out a contiguous range
-		// without running in to some other mapping.
-		//
-		// 2. This makes Go heap addresses more easily
-		// recognizable when debugging.
-		//
-		// 3. Stack scanning in gccgo is still conservative,
-		// so it's important that addresses be distinguishable
-		// from other data.
-		//
-		// Starting at 0x00c0 means that the valid memory addresses
-		// will begin 0x00c0, 0x00c1, ...
-		// In little-endian, that's c0 00, c1 00, ... None of those are valid
-		// UTF-8 sequences, and they are otherwise as far away from
-		// ff (likely a common byte) as possible. If that fails, we try other 0xXXc0
-		// addresses. An earlier attempt to use 0x11f8 caused out of memory errors
-		// on OS X during thread allocations.  0x00c0 causes conflicts with
-		// AddressSanitizer which reserves all memory up to 0x0100.
-		// These choices reduce the odds of a conservative garbage collector
-		// not collecting memory because some non-pointer block of memory
-		// had a bit pattern that matched a memory address.
-		//
-		// However, on arm64, we ignore all this advice above and slam the
-		// allocation at 0x40 << 32 because when using 4k pages with 3-level
-		// translation buffers, the user address space is limited to 39 bits
-		// On darwin/arm64, the address space is even smaller.
-		// On AIX, mmaps starts at 0x0A00000000000000 for 64-bit.
-		// processes.
-		for i := 0x7f; i >= 0; i-- {
-			var p uintptr
-			switch {
-			case GOARCH == "arm64" && GOOS == "darwin":
-				p = uintptr(i)<<40 | uintptrMask&(0x0013<<28)
-			case GOARCH == "arm64":
-				p = uintptr(i)<<40 | uintptrMask&(0x0040<<32)
-			case GOOS == "aix":
-				if i == 0 {
-					// We don't use addresses directly after 0x0A00000000000000
-					// to avoid collisions with others mmaps done by non-go programs.
-					continue
-				}
-				p = uintptr(i)<<40 | uintptrMask&(0xa0<<52)
-			case raceenabled:
-				// The TSAN runtime requires the heap
-				// to be in the range [0x00c000000000,
-				// 0x00e000000000).
-				p = uintptr(i)<<32 | uintptrMask&(0x00c0<<32)
-				if p >= uintptrMask&0x00e000000000 {
-					continue
-				}
-			default:
-				p = uintptr(i)<<40 | uintptrMask&(0x00c0<<32)
-			}
-			hint := (*arenaHint)(mheap_.arenaHintAlloc.alloc())
-			hint.addr = p
-			hint.next, mheap_.arenaHints = mheap_.arenaHints, hint
-		}
-	} else {
-		// On a 32-bit machine, we're much more concerned
-		// about keeping the usable heap contiguous.
-		// Hence:
-		//
-		// 1. We reserve space for all heapArenas up front so
-		// they don't get interleaved with the heap. They're
-		// ~258MB, so this isn't too bad. (We could reserve a
-		// smaller amount of space up front if this is a
-		// problem.)
-		//
-		// 2. We hint the heap to start right above the end of
-		// the binary so we have the best chance of keeping it
-		// contiguous.
-		//
-		// 3. We try to stake out a reasonably large initial
-		// heap reservation.
+  // Create initial arena growth hints.
+  if sys.PtrSize == 8 {
+    // On a 64-bit machine, we pick the following hints
+    // because:
+    //
+    // 1. Starting from the middle of the address space
+    // makes it easier to grow out a contiguous range
+    // without running in to some other mapping.
+    //
+    // 2. This makes Go heap addresses more easily
+    // recognizable when debugging.
+    //
+    // 3. Stack scanning in gccgo is still conservative,
+    // so it's important that addresses be distinguishable
+    // from other data.
+    //
+    // Starting at 0x00c0 means that the valid memory addresses
+    // will begin 0x00c0, 0x00c1, ...
+    // In little-endian, that's c0 00, c1 00, ... None of those are valid
+    // UTF-8 sequences, and they are otherwise as far away from
+    // ff (likely a common byte) as possible. If that fails, we try other 0xXXc0
+    // addresses. An earlier attempt to use 0x11f8 caused out of memory errors
+    // on OS X during thread allocations.  0x00c0 causes conflicts with
+    // AddressSanitizer which reserves all memory up to 0x0100.
+    // These choices reduce the odds of a conservative garbage collector
+    // not collecting memory because some non-pointer block of memory
+    // had a bit pattern that matched a memory address.
+    //
+    // However, on arm64, we ignore all this advice above and slam the
+    // allocation at 0x40 << 32 because when using 4k pages with 3-level
+    // translation buffers, the user address space is limited to 39 bits
+    // On darwin/arm64, the address space is even smaller.
+    // On AIX, mmaps starts at 0x0A00000000000000 for 64-bit.
+    // processes.
+    for i := 0x7f; i >= 0; i-- {
+      var p uintptr
+      switch {
+        case GOARCH == "arm64" && GOOS == "darwin":
+        p = uintptr(i)<<40 | uintptrMask&(0x0013<<28)
+        case GOARCH == "arm64":
+        p = uintptr(i)<<40 | uintptrMask&(0x0040<<32)
+        case GOOS == "aix":
+        if i == 0 {
+          // We don't use addresses directly after 0x0A00000000000000
+          // to avoid collisions with others mmaps done by non-go programs.
+          continue
+        }
+        p = uintptr(i)<<40 | uintptrMask&(0xa0<<52)
+        case raceenabled:
+        // The TSAN runtime requires the heap
+        // to be in the range [0x00c000000000,
+        // 0x00e000000000).
+        p = uintptr(i)<<32 | uintptrMask&(0x00c0<<32)
+        if p >= uintptrMask&0x00e000000000 {
+          continue
+        }
+        default:
+        p = uintptr(i)<<40 | uintptrMask&(0x00c0<<32)
+      }
+      hint := (*arenaHint)(mheap_.arenaHintAlloc.alloc())
+      hint.addr = p
+      hint.next, mheap_.arenaHints = mheap_.arenaHints, hint
+    }
+  } else {
+    // On a 32-bit machine, we're much more concerned
+    // about keeping the usable heap contiguous.
+    // Hence:
+    //
+    // 1. We reserve space for all heapArenas up front so
+    // they don't get interleaved with the heap. They're
+    // ~258MB, so this isn't too bad. (We could reserve a
+    // smaller amount of space up front if this is a
+    // problem.)
+    //
+    // 2. We hint the heap to start right above the end of
+    // the binary so we have the best chance of keeping it
+    // contiguous.
+    //
+    // 3. We try to stake out a reasonably large initial
+    // heap reservation.
 
-		const arenaMetaSize = (1 << arenaBits) * unsafe.Sizeof(heapArena{})
-		meta := uintptr(sysReserve(nil, arenaMetaSize))
-		if meta != 0 {
-			mheap_.heapArenaAlloc.init(meta, arenaMetaSize)
-		}
+    const arenaMetaSize = (1 << arenaBits) * unsafe.Sizeof(heapArena{})
+    meta := uintptr(sysReserve(nil, arenaMetaSize))
+    if meta != 0 {
+      mheap_.heapArenaAlloc.init(meta, arenaMetaSize)
+    }
 
-		// We want to start the arena low, but if we're linked
-		// against C code, it's possible global constructors
-		// have called malloc and adjusted the process' brk.
-		// Query the brk so we can avoid trying to map the
-		// region over it (which will cause the kernel to put
-		// the region somewhere else, likely at a high
-		// address).
-		procBrk := sbrk0()
+    // We want to start the arena low, but if we're linked
+    // against C code, it's possible global constructors
+    // have called malloc and adjusted the process' brk.
+    // Query the brk so we can avoid trying to map the
+    // region over it (which will cause the kernel to put
+    // the region somewhere else, likely at a high
+    // address).
+    procBrk := sbrk0()
 
-		// If we ask for the end of the data segment but the
-		// operating system requires a little more space
-		// before we can start allocating, it will give out a
-		// slightly higher pointer. Except QEMU, which is
-		// buggy, as usual: it won't adjust the pointer
-		// upward. So adjust it upward a little bit ourselves:
-		// 1/4 MB to get away from the running binary image.
-		p := firstmoduledata.end
-		if p < procBrk {
-			p = procBrk
-		}
-		if mheap_.heapArenaAlloc.next <= p && p < mheap_.heapArenaAlloc.end {
-			p = mheap_.heapArenaAlloc.end
-		}
-		p = round(p+(256<<10), heapArenaBytes)
-		// Because we're worried about fragmentation on
-		// 32-bit, we try to make a large initial reservation.
-		arenaSizes := []uintptr{
-			512 << 20,
-			256 << 20,
-			128 << 20,
-		}
-		for _, arenaSize := range arenaSizes {
-			a, size := sysReserveAligned(unsafe.Pointer(p), arenaSize, heapArenaBytes)
-			if a != nil {
-				mheap_.arena.init(uintptr(a), size)
-				p = uintptr(a) + size // For hint below
-				break
-			}
-		}
-		hint := (*arenaHint)(mheap_.arenaHintAlloc.alloc())
-		hint.addr = p
-		hint.next, mheap_.arenaHints = mheap_.arenaHints, hint
-	}
+    // If we ask for the end of the data segment but the
+    // operating system requires a little more space
+    // before we can start allocating, it will give out a
+    // slightly higher pointer. Except QEMU, which is
+    // buggy, as usual: it won't adjust the pointer
+    // upward. So adjust it upward a little bit ourselves:
+    // 1/4 MB to get away from the running binary image.
+    p := firstmoduledata.end
+    if p < procBrk {
+      p = procBrk
+    }
+    if mheap_.heapArenaAlloc.next <= p && p < mheap_.heapArenaAlloc.end {
+      p = mheap_.heapArenaAlloc.end
+    }
+    p = round(p+(256<<10), heapArenaBytes)
+    // Because we're worried about fragmentation on
+    // 32-bit, we try to make a large initial reservation.
+    arenaSizes := []uintptr{
+      512 << 20,
+      256 << 20,
+      128 << 20,
+    }
+    for _, arenaSize := range arenaSizes {
+      a, size := sysReserveAligned(unsafe.Pointer(p), arenaSize, heapArenaBytes)
+      if a != nil {
+        mheap_.arena.init(uintptr(a), size)
+        p = uintptr(a) + size // For hint below
+        break
+      }
+    }
+    hint := (*arenaHint)(mheap_.arenaHintAlloc.alloc())
+    hint.addr = p
+    hint.next, mheap_.arenaHints = mheap_.arenaHints, hint
+  }
 }
 ```
 
