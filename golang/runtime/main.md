@@ -492,6 +492,7 @@ TODO
 func stackinit() {
   // _StackCacheSize => 32768 bit => 32K
   // _PageMask => 8191 bit => 1k - 1 bit
+  // TODO
   if _StackCacheSize&_PageMask != 0 {
     throw("cache size must be a multiple of page size")
   }
@@ -502,7 +503,7 @@ func stackinit() {
     stackpool[i].init()
   }
 
-  // 
+  // TODO
   for i := range stackLarge.free {
     stackLarge.free[i].init()
   }
@@ -579,7 +580,10 @@ func mallocinit() {
   }
 
   // Initialize the heap.
+  // 初始化heap
   mheap_.init()
+  
+  // 取得G (golang GMP)
   _g_ := getg()
   _g_.m.mcache = allocmcache()
 

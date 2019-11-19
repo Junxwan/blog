@@ -1,0 +1,11 @@
+version: "3"
+
+services:
+  golang:
+    image: golang:1.13-alpine
+    tty: true
+    privileged: true
+    volumes:
+      - ./:/var/www
+    ports:
+      - "8845:8845"

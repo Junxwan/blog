@@ -1,6 +1,6 @@
-
+.idea/
+.DS_Store
 hexo/_config.yml
 hexo/node_modules
 hexo/public
-.DS_Store
 hexo/.deploy_git/
