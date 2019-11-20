@@ -5,6 +5,9 @@
 - [Process](#Process)
 - [Thread](#Thread)
 - [Coroutine](#Coroutine)
+- [用戶級線程模型](#用戶級線程模型)
+- [內核級線程模型](#內核級線程模型)
+- [兩級線程模型](#兩級線程模型)
 - [總結](#總結)
 - [參考資料](#參考資料)
 - [疑問](#疑問)
@@ -59,11 +62,25 @@ thread是為了解決Process並發造成的問題，但是過多的thread也是�
 
 ## Coroutine
 
+coroutine是一種更輕量的thread，原本thread調度是由CPU控制而coroutine是由用戶控制，用戶自行決定何時要調度不需要交由CPU調度減少了調度時間更能利用CPU，切換非常輕量，coroutine本身stack內存空間由用戶控制，減少內存的浪費提高內存利用率．由於是依附在thread上，如果thread掛掉或是阻塞一樣會無法使用
+
+
+
+## 用戶級線程模型
+
+TODO
+
+## 內核級線程模型
+
+TODO
+
+## 兩級線程模型
+
+TODO
+
 
 
 ## 結論
-
-
 
 |           | 內存共享 | 調度開銷 | 併發效率 | 內存消耗 | 調度方式 | stack內存分配 |
 | --------- | -------- | -------- | -------- | -------- | -------- | ------------- |
@@ -83,9 +100,19 @@ thread是為了解決Process並發造成的問題，但是過多的thread也是�
 
 ## 參考資料
 
+線程模型
+
+https://taohuawu.club/high-performance-implementation-of-goroutine-pool
+
+https://zhuanlan.zhihu.com/p/81390586
 
 
-https://www.imooc.com/article/31751
+
+Process v.s. Thread v.s. Coroutine
+
+http://lessisbetter.site/2019/03/10/golang-scheduler-1-history/
+
+
 
 ## 疑問
 

@@ -22,22 +22,6 @@
 
 ## TODO主題
 
-1. 进程 线程 协程 Process v.s. Thread v.s. Coroutine
-
-   https://juejin.im/post/5b0014b7518825426e023666
-
-   https://www.imooc.com/article/31751
-
-   https://zhuanfou.com/ask/78120839_783
-
-   https://www.jianshu.com/p/f11724034d50
-
-   https://zhuanlan.zhihu.com/p/81390586
-
-   https://zhuanlan.zhihu.com/p/37754274
-
-2. 用户线程(user thread)与核心线程(kernel thread)
-
 3. Golang CSP
 
 4. Green Threads
@@ -65,8 +49,6 @@
    https://tonybai.com/2017/06/23/an-intro-about-goroutine-scheduler/
 
    http://skoo.me/go/2013/11/29/golang-schedule?utm_campaign=studygolang.com&utm_medium=studygolang.com&utm_source=studygolang.com
-
-   https://www.zhihu.com/question/20862617/answer/131341519
 
    https://www.zhihu.com/question/20862617/answer/27964865
 
@@ -262,7 +244,7 @@
 
 29. 虚拟内存
 
-30. go源碼閱讀參考
+28. go源碼閱讀參考
 
     https://juejin.im/post/5d661014f265da03f04cdddc
 
