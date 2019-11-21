@@ -80,6 +80,20 @@ var modinfo string
 // for nmspinning manipulation.
 
 var (
+	// m0與g0其實應用程式啟動時就已先初始化完成，並非由runtime自行分配而是系統．
+	//
+	// m0是Process啟動後透過組合語言(匯編)賦予值至m0，可以參考runtime/asm_amd64.s 196 line
+	// 可以看作是一個main thread，屬於內核級線程模型，一開始負責一些初始化與第一個G的執行，剩下其實跟一般m一樣．
+	//
+	// 每個thread上都有一個stack，這個就是g0，本質上跟一般的g是一樣的，主要差異在於g0是系統自行分配出來
+	// 也就是內核級線程模型內的stack，一般由runtime分配的g有2KB可以動態擴展，但g0則不一定是2KB需要看系統設定且無法動態擴展
+	// 主要是負責幫助m調度g不做其他事情，所以每個m都有g0，對於用戶角度來看是無法感知到
+	// 一般用戶 go func() 是可以選擇執行任何任務但g0無法．
+	//
+	// m0代表main thread，g0則是thread stack，所有調度都是跑在g0上所以不管事m0還是由runtime建立的m上都需要綁定g0
+	// m也是thread，屬於內核級線程模型但與m0不一樣的是m0是主要的thread兩者之間有父子關係，m0掛掉m就掛掉反之m掛掉m0還活著
+	// g也就是goroutine，g0也是一樣都是保存stack資料只是來源不同面向執行的任務不同，
+	// 一個由系統分配一個由用戶分配，一個負責調度，一個被調度．
 	m0           m
 	g0           g
 	raceprocctx0 uintptr
@@ -610,6 +624,7 @@ func dumpgstatus(gp *g) {
 
 func checkmcount() {
 	// sched lock is held
+	// 如果當前m的數量比限制的數量還大直接批出錯誤
 	if mcount() > sched.maxmcount {
 		print("runtime: program exceeds ", sched.maxmcount, "-thread limit\n")
 		throw("thread exhaustion")
@@ -617,24 +632,33 @@ func checkmcount() {
 }
 
 func mcommoninit(mp *m) {
+	// 取得目前stack上的g
 	_g_ := getg()
 
 	// g0 stack won't make sense for user (and is not necessary unwindable).
-	// g0其實跟一般的g是一樣的，主要差異在於g0是系統自行分配出來，不受到用戶控制，
-	// 一般由runtime建立並維護的g才是用戶可以接觸的
-	// 所以這邊判斷當前stack上的g如果是系統上的
+	// 判斷此g是否為thread上的g
+	// 如果是thread上的g則調整trace stack上的print的階層
 	if _g_ != _g_.m.g0 {
+		// TODO
 		callers(1, mp.createstack[:])
 	}
 
+	// TODO
 	lock(&sched.lock)
+
+	// m id需要趨勢遞增
 	if sched.mnext+1 < sched.mnext {
 		throw("runtime: thread ID overflow")
 	}
+
+	// 設置m id
 	mp.id = sched.mnext
 	sched.mnext++
+
+	// 檢查當前m的數量
 	checkmcount()
 
+	// TODO
 	mp.fastrand[0] = 1597334677 * uint32(mp.id)
 	mp.fastrand[1] = uint32(cputicks())
 	if mp.fastrand[0]|mp.fastrand[1] == 0 {

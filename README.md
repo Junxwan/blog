@@ -36,23 +36,27 @@
 
 9. 死鎖（Deadlock)
 
-10. golang GMP
+8. golang GMP
 
-   https://colobu.com/2017/05/04/go-scheduler/
+  https://colobu.com/2017/05/04/go-scheduler/
 
-   https://juejin.im/post/5b7678f451882533110e8948
+  https://juejin.im/post/5b7678f451882533110e8948
 
-   https://juejin.im/post/5d9a9c12e51d45781420fb7e
+  https://juejin.im/post/5d9a9c12e51d45781420fb7e
 
-   https://studygolang.com/articles/11627
+  https://studygolang.com/articles/11627
 
-   https://tonybai.com/2017/06/23/an-intro-about-goroutine-scheduler/
+  https://tonybai.com/2017/06/23/an-intro-about-goroutine-scheduler/
 
-   http://skoo.me/go/2013/11/29/golang-schedule?utm_campaign=studygolang.com&utm_medium=studygolang.com&utm_source=studygolang.com
+  http://skoo.me/go/2013/11/29/golang-schedule?utm_campaign=studygolang.com&utm_medium=studygolang.com&utm_source=studygolang.com
 
-   https://www.zhihu.com/question/20862617/answer/27964865
+  https://www.zhihu.com/question/20862617/answer/27964865
 
-   https://blog.csdn.net/heiyeshuwu/article/details/51178268
+  https://blog.csdn.net/heiyeshuwu/article/details/51178268
+
+  https://www.cnblogs.com/zkweb/p/7815600.html
+
+  https://www.cnblogs.com/abozhang/p/10802319.html
 
 11. golang defer
 
@@ -110,7 +114,7 @@
 
     https://prometheus.io/docs/prometheus/latest/installation/
 
-21. 組合語言(汇编语言)
+19. 組合語言(汇编语言)
 
     https://davidwong.fr/goasm/
 
@@ -121,6 +125,8 @@
     http://blog.rootk.com/post/golang-asm.html
 
     https://syslog.ravelin.com/anatomy-of-a-function-call-in-go-f6fc81b80ecc
+
+    https://www.cnblogs.com/abozhang/p/10773869.html
 
 22. 指標 (pointer) 和 參考 (reference)與傳遞
 
@@ -262,6 +268,10 @@
 
     https://zboya.github.io/post/go_scheduler
 
+    https://www.cnblogs.com/abozhang/default.html
+
+    https://www.cnblogs.com/abozhang/p/10813229.html
+
 31. Plan9
 
 32. Linux huge page
@@ -274,11 +284,12 @@
 
     http://www.zendei.com/article/37419.html
 
-34. Thread-local Storage
+32. Thread-local Storage
 
     https://link.zhihu.com/?target=https%3A//groups.google.com/d/msg/golang-nuts/IiWZ2hUuLDA/SNKYYZBelsYJ
 
     https://www.jianshu.com/p/2c2d293f1f2b
+    https://www.cnblogs.com/abozhang/p/10800332.html
 
 35. 内联函数
 

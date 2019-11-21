@@ -455,7 +455,9 @@ type m struct {
 	divmod  uint32 // div/mod denominator for arm - known to liblink
 
 	// Fields not known to debuggers.
-	procid        uint64       // for debuggers, but offset not hard-coded
+	procid uint64 // for debuggers, but offset not hard-coded
+
+	// 負責處理信號的goroutine
 	gsignal       *g           // signal-handling g
 	goSigStack    gsignalStack // Go-allocated signal handling stack
 	sigmask       sigset       // storage for saved signal mask
@@ -601,6 +603,8 @@ type p struct {
 	pad cpu.CacheLinePad
 }
 
+// 負責保存 Global queue的G
+// 每個P其實都有自己的queue存放G，但有些G會被放到schedt再次等待放到P的G queue
 type schedt struct {
 	// accessed atomically. keep at top to ensure alignment on 32-bit systems.
 	goidgen  uint64
@@ -614,10 +618,14 @@ type schedt struct {
 	midle        muintptr // idle m's waiting for work
 	nmidle       int32    // number of idle m's waiting for work
 	nmidlelocked int32    // number of locked m's waiting for work
-	mnext        int64    // number of m's that have been created and next M ID
-	maxmcount    int32    // maximum number of m's allowed (or die)
-	nmsys        int32    // number of system m's not counted for deadlock
-	nmfreed      int64    // cumulative number of freed m's
+
+	// 下一個m的id，以及建立過的m數量，只會增加不會減少
+	mnext int64 // number of m's that have been created and next M ID
+	// m最大的數量
+	maxmcount int32 // maximum number of m's allowed (or die)
+	nmsys     int32 // number of system m's not counted for deadlock
+	// 銷毀掉的m數量，只會增加不會減少
+	nmfreed int64 // cumulative number of freed m's
 
 	ngsys uint32 // number of system goroutines; updated atomically
 

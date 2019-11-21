@@ -31,12 +31,18 @@
 閱讀此篇希望具備的知識
 
 1. 並發與並行差異？
+
 2. 知道什麼是Thread，有寫過類似程式？
+
 3. CPU switch context 意義 ？
+
 4. 什麼是lock  ？
+
 5. 什麼是stack ？
 
+6. CPU寄存器 ？
 
+   
 
 ## Process
 
@@ -52,11 +58,15 @@
 
 thread之間是有依賴關係，如在main thread 啟動sub thread，當main thread掛掉時sub thread也會一起掛掉，相反的sub thread掛掉則main thread不受影響，Process是不會有這個問題，因為都是各自獨立
 
-當啟動一個應用程式建立Process時就一定會有一個thread，就是main thread可以看成是一個主要的thread
+當啟動一個應用程式建立Process時就一定會有一個thread，因為作業系統把應用程式加載起來時一定需要有某機制去幫助初始化或是做一些其他事情，而負責這件事的就是一個thread，該thread也可以認為是main thread
 
-thread是為了解決Process並發造成的問題，但是過多的thread也是會消耗許多內存或者調度時switch context的時間太大(CPU只有幾顆卻有上千個thread情況)，既然CPU調度這麼花時間，內存開銷又大(不一定每個thread stack都需要幾MB)，能不能交由用戶端自行控制何時調度，每個thread內存多少呢．
+thread建立與銷毀雖然都比Process消耗的資源來的少很多，但還是有一些缺點需要克服
 
-就是在一個thread內執行多個類似thread並自行控制，這樣對於CPU來看還是只有一個thread且都在同一個thread操作就減少CPU調度的時間
+1. 過多的thread工作時會導致CPU調度的時間增長，列如只有4 core但卻開了100個thread，同時間只有四個thread能夠工作但因為還有其他thread排隊等待CPU執行，所以CPU並需要很頻繁的切換到各個thread，每個thread在CPU上執行都需要把資料複製到CPU寄存器上，當需要切換時就必須在保存回thread後再把要執行的thread資料複製一份至CPU寄存器上等動作，這一連貫的動作也會造成CPU調度的時間增長
+
+2. 每個thread stack都是固定的(看作業系統決定)，這導致可能只使用幾KB但每個thread都先分配幾MB就造成內存浪費或著是分配的內存不夠造成溢出
+
+總合以上觀點，希望能夠減輕CPU調度開銷的時間讓CPU利用率上升且stack可以動態分配解決溢出或是浪費，於是就有了coroutine
 
 
 
@@ -111,6 +121,22 @@ https://zhuanlan.zhihu.com/p/81390586
 Process v.s. Thread v.s. Coroutine
 
 http://lessisbetter.site/2019/03/10/golang-scheduler-1-history/
+
+
+
+Process與Thread switch context時間
+
+https://zhuanlan.zhihu.com/p/79772089
+
+https://zhuanlan.zhihu.com/p/80037638
+
+
+
+Thread與Coroutine switch context
+
+https://www.zhihu.com/question/308641794/answer/572499202
+
+https://www.zhihu.com/question/307787570/answer/565079481
 
 
 
