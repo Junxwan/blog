@@ -1,10 +1,7 @@
-
-
 # 淺談main 入口點探討
 
-```bash
 非必要前置知識，有時間撰寫會介紹
-1. 組合語言(中國用詞為汇编)
+1. 組合語言(中國用詞為汇编) [參考](https://github.com/Junxwan/blog/tree/master/assembly)
 2. golang plan9 
 3. gdb用法
 4. golang delve
@@ -19,7 +16,6 @@
 不要在mac or window 下做操作
 
 如linux => os_linux.go，window => os_window.go
-```
 
 # 目錄
 
