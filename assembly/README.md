@@ -1,6 +1,6 @@
 # 組合語言(汇编语言)
 
-- [閱讀前提](#閱讀前提])
+- [閱讀前提](#閱讀前提)
 
 - [環境](#環境)
 
@@ -20,6 +20,10 @@
 - [型別](#型別)
 
 - [指令](#指令)
+
+- [標誌](#標誌)
+
+- [stack](#stack)
 
 - [參考](#參考)
 
@@ -115,7 +119,7 @@ Breakpoint 1 at 0x401000: file test.s, line 6.
 Breakpoint 1, _start () at test.s:6
 ```
 
-入口點是0x401000，看一下rip是指向0x401000，從0x401000確認後面的指令地址
+入口點是`0x401000`，看一下`rip`是指向`0x401000`，從`0x401000`確認後面的指令地址
 
 ```bash
 (gdb) i r $rip
@@ -127,7 +131,7 @@ rip            0x401000            0x401000 <_start>
 
 ```
 
-這時候單部執行看看rip是指向0x401007，也就是`movq $2, %rax`
+這時候單部執行看看`rip`是指向`0x401007`，也就是`movq $2, %rax`
 
 ```bash
 (gdb) n
@@ -135,7 +139,7 @@ rip            0x401000            0x401000 <_start>
 rip            0x401007            0x401007 <_start+7>
 ```
 
-另外gdb內有一個`$pc`跟rip是一樣指向下一次要執行的指令地址，但$pc在組合語言是不存在，只是gdb內有這樣一個變數可以用
+另外gdb內有一個`$pc`跟`rip`是一樣指向下一次要執行的指令地址，但`$pc`在組合語言是不存在，只是gdb內有這樣一個變數可以用
 
 ```bash
 (gdb) x /3i $pc
@@ -173,7 +177,7 @@ $2 = (void (*)()) 0x401007 <_start+7>
 
 
 
-## AT&T
+## 區塊
 
 ### 段
 
@@ -347,6 +351,7 @@ Ex: movb（8位）、movw（16位）、movl（32位）、movq（64位）
 
    
 5. 內存(變數地址)傳給寄存器
+
    | 範例              | rax值      |
    | :---------------- | ---------- |
    | movq values, %rax | values的值 |
@@ -584,6 +589,8 @@ Stack level 0, frame at 0x7fffffffed10:
  rip at 0x7fffffffed08
 ```
 
+
+
 ### pop
 
 從stack拿出資料
@@ -649,7 +656,54 @@ Stack level 0, frame at 0x7fffffffed28:
 
 跳轉指令
 
-格式為: jmp <location>`
+格式為: `jmp <location>`
+
+實際範例如下，`int $0x80 `代表exit
+
+```assembly
+.section .text
+
+.globl _start
+
+_start:
+   movq $1, %rax
+   jmp test
+   movq $3, %rax
+   int $0x80 
+
+test:
+   movq $2, %rax
+```
+
+最後`rax`值是2，因為`jmp test`會跳到`test`標籤上執行`movq $2, %rax`完後就結束了，jmp是如何知道`test`標籤在哪裡呢？，如下可以看到`jmp 0x401010 <test>`，就是這個`0x401010`代表`test`，直接跳過不執行`mov $0x3,%rax`
+
+```bash
+(gdb) x /4i $pc
+=> 0x401000 <_start>:   mov    $0x1,%rax
+   0x401007 <_start+7>: jmp    0x401010 <test>
+   0x401009 <_start+9>: mov    $0x3,%rax
+   0x401010 <test>:     mov    $0x2,%rax
+```
+
+
+
+### call
+
+調用指令
+
+格式為: `call <address>`
+
+實際範例如下
+
+```assembly
+
+```
+
+
+
+### ret
+
+跳轉指令，請參考[stack](#stack)章節
 
 
 
@@ -662,6 +716,34 @@ Stack level 0, frame at 0x7fffffffed28:
 
 
 ### loop
+
+迴圈指令
+
+格式為: `loop <location>`
+
+實際範例如下，透過`rcx`設置迴圈次數，每跑一次loop，`rcx`就會遞減一次直到零才不會繼續跑
+
+```assembly
+.section .text
+
+.globl _start
+
+_start:
+   movq $10, %rcx
+   movq $0, %rax
+loop1:
+   addq $1, %rax
+   loop loop1
+```
+
+`rax`值為10，因為跑了10次加1
+
+```bash
+(gdb) i r $rax
+rax            0xa                 10
+```
+
+
 
 
 
@@ -717,6 +799,114 @@ Stack level 0, frame at 0x7fffffffed28:
 
 
 
+### cmp
+
+
+
+## 標誌
+
+### cf
+
+### of
+
+### pf
+
+### sf
+
+### zf
+
+
+
+## stack
+
+本節介紹如何利用stack保存參數,區域變數,執行結果來幫助function執行相對應動作之資料依據
+
+以下有一個`add` function，邏輯是傳遞一個int參數並加ㄧ再回傳結果，想像golang範例如下
+
+```go
+package main
+
+import "fmt"
+
+var result = 0
+
+func main() {
+	result = add(2) 
+  result += add(4)
+  
+	// output 8
+	fmt.Println(result)
+}
+
+func add(a int) int {
+	return a + 1
+}
+
+```
+
+在開始討論上述範例中stack變化是如何前，先構想一下會有哪些問題出現
+
+1. 當呼叫 `add(2)`完成後怎麼回到原始的呼叫位置呢？
+2. stack怎麼儲存參數呢？
+3. stack怎麼儲存區域變數呢？
+4. function結束後怎樣清空stack，不然下一個function可能會用到舊資料？
+
+首先從(1)點開始解釋，當呼叫`add(2)`時，在跳轉到`add()`function前先向stack push下一個執行點(內存地址)，以剛剛的範例來看
+
+
+
+
+
+
+
+以下是對照goang範例寫出來的組合語言
+
+```assembly
+.section .data
+result:
+   .int 0
+
+.section .text
+
+.globl _start
+
+_start:
+   pushq $2
+   call area
+   addq $8, %rsp
+   movq %rax, result
+
+   pushq $4
+   call area
+   addq $8, %rsp
+   addq %rax, result
+
+   int $0x80
+
+.type area, @function
+area:
+   pushq %rbp
+   movq %rsp, %rbp
+   subq $8, %rsp
+   movq 16(%rbp), %rax
+   movq $1, -8(%rbp)
+   addq -8(%rbp), %rax
+
+   movq %rbp, %rsp
+   popq %rbp
+   ret
+```
+
+
+
+| 地址           | 值   | 指令 |
+| -------------- | ---- | ---- |
+| 0x7fffffffed20 |      |      |
+| 0x7fffffffed18 |      |      |
+|                |      |      |
+
+
+
 
 
 
@@ -726,7 +916,7 @@ Stack level 0, frame at 0x7fffffffed28:
 
    [汇编语言(第3版)-王爽](#https://book.douban.com/subject/25726019/) 基礎入門，使用intel寫法較簡單，我個人覺得當學習概念就好不用全懂，主要是有一個帶入感讓你覺得CPU是怎樣了解程式語言
 
-   [汇编语言程序设计](https://book.douban.com/subject/1446250/) AT&T寫法入門，跟intel相比是另一派風格也較難一點，linux主要都是AT&T 寫法，基本上這本必看，本書例子是32位元但是開發機大部分都是64位元所以給出來的範例會有少許錯誤，請自行google解決 ex: push在64與32位元上的[差異](https://stackoverflow.com/questions/5485468/x86-assembly-pushl-popl-dont-work-with-error-suffix-or-operands-invalid)
+   [汇编语言程序设计](https://book.douban.com/subject/1446250/) AT&T寫法入門，跟intel相比是另一派風格也較難一點，linux主要都是AT&T 寫法，基本上這本必看，本書例子是32位元但是開發機大部分都是64位元所以給出來的範例會有少許錯誤，請自行google解決 ex: push在64與32位元上的[差異](https://stackoverflow.com/questions/5485468/x86-assembly-pushl-popl-dont-work-with-error-suffix-or-operands-invalid)，部分進階內容看不懂可以調過，畢竟只是入門學習非實際做開發
 
    
 
