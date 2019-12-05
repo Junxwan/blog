@@ -696,14 +696,276 @@ test:
 實際範例如下
 
 ```assembly
+.section .text
 
+.globl _start
+
+_start:
+   movq $1, %rax
+   call test
+   addq $3, %rax
+   int $0x80 
+
+test:
+   addq $2, %rax
+   ret
+```
+
+最後`rax`值為6，因為調用`test`對`rax`多增加2，首先利用gdb來debug，上述範例檔名為test.s
+
+```bash
+as -gstabs -o test.o test.s && ld -o test test.o && gdb ./test
+```
+
+斷點入口，查看目前組合語言內存位置與`rax`、 `rip`值
+
+```bash
+(gdb) b *_start
+Breakpoint 1 at 0x401000: file test.s, line 6.
+(gdb) r
+Starting program: /var/www/assembly/test 
+
+Breakpoint 1, _start () at test.s:6
+6          movq $1, %rax
+(gdb) x /6i $pc
+=> 0x401000 <_start>:   mov    $0x1,%rax
+   0x401007 <_start+7>: callq  0x401012 <test>
+   0x40100c <_start+12>:        add    $0x3,%rax
+   0x401010 <_start+16>:        int    $0x80
+   0x401012 <test>:     add    $0x2,%rax
+   0x401016 <test+4>:   retq 
+(gdb) i r $rax
+rax            0x0                 0
+(gdb) i r $rip
+rip            0x401000            0x401000 <_start>
+(gdb) i r $rsp
+rsp            0x7fffffffed10      0x7fffffffed10
+(gdb) x /32db $rsp
+0x7fffffffed10: 1       0       0       0       0       0       0       0
+0x7fffffffed18: -39     -18     -1      -1      -1      127     0       0
+0x7fffffffed20: 0       0       0       0       0       0       0       0
+0x7fffffffed28: -16     -18     -1      -1      -1      127     0       0
+```
+
+| 寄存器 | 值             |
+| ------ | -------------- |
+| rax    | 0x0            |
+| rip    | 0x401000       |
+| rsp    | 0x7fffffffed10 |
+
+執行`movq $1, %rax`，針對`rax`+1
+
+```bash
+(gdb) n
+7          call test
+(gdb) x /6i $pc
+=> 0x401007 <_start+7>: callq  0x401012 <test>
+   0x40100c <_start+12>:        add    $0x3,%rax
+   0x401010 <_start+16>:        int    $0x80
+   0x401012 <test>:     add    $0x2,%rax
+   0x401016 <test+4>:   retq   
+   0x401017:    add    %al,(%rcx)
+(gdb) i r $rax
+rax            0x1                 1
+(gdb) i r $rip
+rip            0x401007            0x401007 <_start+7>
+(gdb) i r $rsp
+rsp            0x7fffffffed10      0x7fffffffed10
+(gdb) x /32db $rsp
+0x7fffffffed10: 1       0       0       0       0       0       0       0
+0x7fffffffed18: -39     -18     -1      -1      -1      127     0       0
+0x7fffffffed20: 0       0       0       0       0       0       0       0
+0x7fffffffed28: -16     -18     -1      -1      -1      127     0       0
+```
+
+| 寄存器 | 值             |
+| ------ | -------------- |
+| rax    | 0x1            |
+| rip    | 0x401007       |
+| rsp    | 0x7fffffffed10 |
+
+執行`call test`，進到`test`
+
+```bash
+(gdb) s
+test () at test.s:12
+12         addq $2, %rax
+(gdb) x /6i $pc
+=> 0x401012 <test>:     add    $0x2,%rax
+   0x401016 <test+4>:   retq   
+   0x401017:    add    %al,(%rcx)
+   0x401019:    add    %al,(%rax)
+   0x40101b:    add    %al,(%rax)
+   0x40101d:    add    %al,(%rdi)
+(gdb) i r $rax
+rax            0x1                 1
+(gdb) i r $rip
+rip            0x401012            0x401012 <test>
+(gdb) i r $rsp
+rsp            0x7fffffffed08      0x7fffffffed08
+(gdb) x /32db $rsp
+0x7fffffffed08: 12      16      64      0       0       0       0       0
+0x7fffffffed10: 1       0       0       0       0       0       0       0
+0x7fffffffed18: -39     -18     -1      -1      -1      127     0       0
+0x7fffffffed20: 0       0       0       0       0       0       0       0
+```
+
+| 寄存器 | 值             |
+| ------ | -------------- |
+| rax    | 0x1            |
+| rip    | 0x401012       |
+| rsp    | 0x7fffffffed08 |
+
+這裡可以發現怎直接跳到`0x401012`內存地址上的代碼，而非`0x40100c`，可得知`call`指令具備更改`rip`的操作，更改的值是`call`目標的內存地址
+
+```assembly
+movq 0x401012, %rip
+```
+
+再看看`rsp`突然從`0x7fffffffed10`變成`0x7fffffffed08`，減少`0x08`，而`0x7fffffffed08`的值代表`0x40100c`，對照一開始查看組合語言代表內存位置上剛好指向`addq $3, %rax`，是執行完`call test`的下一條指令
+
+```bash
+(gdb) x /8b 0x7fffffffed08
+0x7fffffffed08: 0x0c    0x10    0x40    0x00    0x00    0x00    0x00    0x00
+```
+
+意思是在執行`call`時會先將下一條指令push進stack內
+
+```assembly
+pushq ％rip
+```
+
+總結可以得到`call`操作其實是先將當前`rip`值push進stack後再更改`rip`值為目標內存地址，利用rip跳轉到目標而為什麼要`pushq ％rip`在[ret](#ret)會有詳細解說
+
+```assembly
+pushq ％rip
+movq 0x401012, %rip
 ```
 
 
 
 ### ret
 
-跳轉指令，請參考[stack](#stack)章節
+跳轉指令
+
+實際範例如下
+
+```assembly
+.section .text
+
+.globl _start
+
+_start:
+   movq $1, %rax
+   call test
+   addq $3, %rax
+   int $0x80
+
+test:
+   addq $2, %rax
+   ret
+```
+
+承接[call](#call)說明可以知道執行`call`會有一個動作是將當前`rip`push進入stack，為什麼要這樣做？．其實主因是來自`call`完目標後需要返回原始地方繼續執行接下來的指令，所以需要先保存來源才能返回，表示返回的動作就是`ret`
+
+依據[call](#call)解說進到`test`後
+
+```bash
+(gdb) x /5i $pc
+=> 0x401012 <test>:     add    $0x2,%rax
+   0x401016 <test+4>:   retq   
+   0x401017:    add    %al,(%rcx)
+   0x401019:    add    %al,(%rax)
+   0x40101b:    add    %al,(%rax)
+(gdb) x /32db $rsp
+0x7fffffffed08: 12      16      64      0       0       0       0       0
+0x7fffffffed10: 1       0       0       0       0       0       0       0
+0x7fffffffed18: -39     -18     -1      -1      -1      127     0       0
+0x7fffffffed20: 0       0       0       0       0       0       0       0
+(gdb) i r $rip
+rip            0x401012            0x401012 <test>
+(gdb) i r $rsp
+rsp            0x7fffffffed08      0x7fffffffed08
+```
+
+| 寄存器 | 值             |
+| ------ | -------------- |
+| rip    | 0x401012       |
+| rsp    | 0x7fffffffed08 |
+
+等待執行`ret`
+
+```bash
+(gdb) n
+test () at test.s:13
+13         ret
+(gdb) x /32db $rsp
+0x7fffffffed08: 12      16      64      0       0       0       0       0
+0x7fffffffed10: 1       0       0       0       0       0       0       0
+0x7fffffffed18: -39     -18     -1      -1      -1      127     0       0
+0x7fffffffed20: 0       0       0       0       0       0       0       0
+(gdb) i r $rip
+rip            0x401016            0x401016 <test+4>
+(gdb) i r $rsp
+rsp            0x7fffffffed08      0x7fffffffed08
+```
+
+| 寄存器 | 值             |
+| ------ | -------------- |
+| rip    | 0x401016       |
+| rsp    | 0x7fffffffed08 |
+
+stack內存結構
+
+| 內存地址       | 值       | 說明      |
+| -------------- | -------- | --------- |
+| 0x7fffffffed10 | 1        | stack top |
+| 0x7fffffffed08 | 0x40100c | 返回地址  |
+
+執行`ret`
+
+```bash
+(gdb) n
+_start () at test.s:8
+8          addq $3, %rax
+(gdb) x /5i $pc
+=> 0x40100c <_start+12>:        add    $0x3,%rax
+   0x401010 <_start+16>:        int    $0x80
+   0x401012 <test>:     add    $0x2,%rax
+   0x401016 <test+4>:   retq   
+   0x401017:    add    %al,(%rcx)
+(gdb) x /32db $rsp
+0x7fffffffed10: 1       0       0       0       0       0       0       0
+0x7fffffffed18: -39     -18     -1      -1      -1      127     0       0
+0x7fffffffed20: 0       0       0       0       0       0       0       0
+0x7fffffffed28: -16     -18     -1      -1      -1      127     0       0
+(gdb) i r $rip
+rip            0x40100c            0x40100c <_start+12>
+(gdb) i r $rsp
+rsp            0x7fffffffed10      0x7fffffffed10
+```
+
+| 寄存器 | 值             |
+| ------ | -------------- |
+| rip    | 0x40100c       |
+| rsp    | 0x7fffffffed10 |
+
+stack內存結構
+
+| 內存地址       | 值       | 說明      |
+| -------------- | -------- | --------- |
+| 0x7fffffffed10 | 1        | stack top |
+| 0x7fffffffed08 | 0x40100c | 返回地址  |
+
+可以看到function結束後回到`addq $3, %rax`，而且`rip`指向`0x40100c`就是`call`時事先push進stack內的下一個要執行的指令地址，這時在執行`ret`時被拿出來指向`rip`，同時`rsp`也指回stack top．
+
+從這些跡象來看可以得出`ret`做了以下指令，該指令是拿出當前`rsp`值並傳給`rip`，同時還做`rsp` - `0x08`的動作
+
+```assembly
+popq %rip
+```
+
+依據上述解說可以得知，`ret`依靠更改`rip`方式返回原來`call`指令完成後的下一個指令，但前提是在執行`ret`時需讓`rsp`指向返回地址才有用，關於返回地址在[call](#call)中有提到請自行參考
 
 
 
