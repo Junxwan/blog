@@ -119,7 +119,7 @@ Breakpoint 1 at 0x401000: file test.s, line 6.
 Breakpoint 1, _start () at test.s:6
 ```
 
-入口點是`0x401000`，看一下`rip`是指向`0x401000`，從`0x401000`確認後面的指令地址
+入口點是`0x401000`，看一下`rip`是指向`0x401000`，從`0x401000`確認後面的指令地址，此時還未執行`0x401000`上的指令
 
 ```bash
 (gdb) i r $rip
@@ -131,13 +131,26 @@ rip            0x401000            0x401000 <_start>
 
 ```
 
-這時候單部執行看看`rip`是指向`0x401007`，也就是`movq $2, %rax`
+| 內存地址 | 指令          |      |
+| -------- | ------------- | ---- |
+| 0x401000 | mov $0x1,%rax | rip  |
+| 0x401007 | mov $0x2,%rax |      |
+| 0x40100e | mov $0x3,%rax |      |
+
+這時候單部執行`0x401000`上的`mov $0x1,%rax` ，`rip`是指向`0x401007`，也就是`movq $2, %rax`
 
 ```bash
 (gdb) n
 7           movq $2, %rax
+(gdb) i r $rip
 rip            0x401007            0x401007 <_start+7>
 ```
+
+| 內存地址 | 指令          |      |
+| -------- | ------------- | ---- |
+| 0x401000 | mov $0x1,%rax |      |
+| 0x401007 | mov $0x2,%rax | rip  |
+| 0x40100e | mov $0x3,%rax |      |
 
 另外gdb內有一個`$pc`跟`rip`是一樣指向下一次要執行的指令地址，但`$pc`在組合語言是不存在，只是gdb內有這樣一個變數可以用
 
@@ -152,15 +165,7 @@ $2 = (void (*)()) 0x401007 <_start+7>
 
 
 
-
-
 ### 標記寄存器
-
-#### 
-
-
-
-#### 
 
 
 
@@ -185,11 +190,19 @@ $2 = (void (*)()) 0x401007 <_start+7>
 
 定義一個段落
 
+```assembly
+.section .text
+```
+
 
 
 #### .data
 
 該段落放置已有初始化的變數
+
+```assembly
+.section .data
+```
 
 | 命令  | 介紹 |
 | ----- | ---- |
@@ -200,6 +213,10 @@ $2 = (void (*)()) 0x401007 <_start+7>
 #### .bss
 
 該段落放置未有初始化的變數
+
+```assembly
+.section .bss
+```
 
 | 命令   | 介紹 |
 | ------ | ---- |
@@ -212,6 +229,10 @@ $2 = (void (*)()) 0x401007 <_start+7>
 
 該段落放置指令代碼
 
+```assembly
+.section .text
+```
+
 
 
 ### 入口
@@ -220,13 +241,9 @@ $2 = (void (*)()) 0x401007 <_start+7>
 
 #### _start
 
-
-
 #### .locmm
 
-
-
-### .comm
+#### .comm
 
 
 
@@ -385,7 +402,7 @@ Ex: movb（8位）、movw（16位）、movl（32位）、movq（64位）
    | index          | 想要偏移次數，只能用寄存器表示   | 1        |
    | size           | 每次偏移多少                     | 4        |
 
-   假設value變數內存地址從0x000000開始，value有三個int值(陣列)分別為10,20,30，%rax是0x000004、%rbx是0x000001、size是4，則value內存結構為下
+   假設value變數內存地址從`0x000000`開始，value有三個int值(陣列)分別為10,20,30，`rax`是`0x000004`、`rbx`是`0x000001`、size是4，則value內存結構為下
 
    | 地址     | 值   |
    | -------- | ---- |
@@ -426,13 +443,14 @@ Ex: movb（8位）、movw（16位）、movl（32位）、movq（64位）
 
 根據規則分別步驟如下
 
-1. `base_address`是value變數地址是0x000000
-   2. `offset_address`是%rax為0x000004
-   3. `base_address` + `offset_address` = 0x000004
-   4. `index` * `size` = 4，以十六進位表示為0x000004
-   5. `base_address + offset_address + index * size` = 0x000004 + 0x000004 = 0x000008
-   6. 對照內存結構表0x000008上的值是30
-   7. %rcx是64位元所以值會是0x000008 ～ 0x00000b，答案就是30
+1. `base_address`是value變數地址是`0x000000`
+   
+   2. `offset_address`是%rax為`0x000004`
+   3. `base_address` + `offset_address` = `0x000004`
+   4. `index` * `size` = 4，以十六進位表示為`0x000004`
+   5. `base_address + offset_address + index * size` = `0x000004 + 0x000004 = 0x000008`
+   6. 對照內存結構表`0x000008`上的值是30
+   7. `rcx`是64位元所以值會是`0x000008` ～ `0x00000b`，答案就是30
    
 7. 內存地址傳給寄存器
 
@@ -519,7 +537,7 @@ Ex: movb（8位）、movw（16位）、movl（32位）、movq（64位）
    | 0x000006 | 0    |
    | 0x000007 | 0    |
    
-   (%rbx)值表示values內存地址，初始地址則是0x000000，這時前方多了個數字表示在從該地址往後偏移幾個位元，範例是4所以`0x000000 + 0x000004` = `0x000004`，所以是從20開始．也就將%rax值覆蓋到0x000004上替換掉原先的值(20)，改成5
+   `(%rbx)`值表示values內存地址，初始地址則是`0x000000`，這時前方多了個數字表示在從該地址往後偏移幾個位元，範例是4所以`0x000000 + 0x000004` = `0x000004`，所以是從20開始．也就將`rax`值覆蓋到`0x000004`上替換掉原先的值(20)，改成5
    
    
    
@@ -576,7 +594,7 @@ _start:
 0x7fffffffed18: 1       0       0       0       0       0       0       0
 ```
 
-stack特性是先進後出的概念，看一下rsp寄存器目前指向0x7fffffffed08，代表是數字3，而3是最後才push進stack的，所以rsp會一直指向最後push進入的資料內存地址
+stack特性是先進後出的概念，看一下`rsp`寄存器目前指向`0x7fffffffed08`，代表是數字3，而3是最後才push進stack的，所以`rsp`會一直指向最後push進入的資料內存地址
 
 ```bash
 (gdb) i f
@@ -624,7 +642,7 @@ _start:
     popq %rbx
 ```
 
-先看看執行到第一個`popq %rbx`後，rsp寄存器指向0x7fffffffed10，原先是指向0x7fffffffed08，代表pop一次則減0x08，而rbx存放著3，這邊以ebx表示32位元更能清楚顯示
+先看看執行到第一個`popq %rbx`後，`rsp`寄存器指向`0x7fffffffed10`，原先是指向`0x7fffffffed08`，代表pop一次則減`0x08`，而`rbx`存放著3，這邊以`ebx`表示32位元更能清楚顯示
 
 ```bash
 (gdb) x /24b $rsp
@@ -637,7 +655,7 @@ rbx            0x100000003         4294967299
 ebx            0x3                 3
 ```
 
-等到pop都執行完後看看rsp寄存器指向0x7fffffffed20，之前存進去的1,2,3數字都已從stack取出了
+等到pop都執行完後看看`rsp`寄存器指向`0x7fffffffed20`，之前存進去的1,2,3數字都已從stack取出了
 
 ```bash
 (gdb) i f
@@ -965,7 +983,9 @@ stack內存結構
 popq %rip
 ```
 
-依據上述解說可以得知，`ret`依靠更改`rip`方式返回原來`call`指令完成後的下一個指令，但前提是在執行`ret`時需讓`rsp`指向返回地址才有用，關於返回地址在[call](#call)中有提到請自行參考
+依據上述解說可以得知，`ret`依靠更改`rip`方式返回原來`call`指令完成後的下一個指令，但前提是在執行`ret`時需讓`rsp`指向`返回地址`才有用，也就是一開始執行`call`push 
+
+
 
 
 
@@ -1151,13 +1171,13 @@ result += add(4) // 地址：0x401007，此地址被放到0x7fffffffed10
 
 
 
-問題(3)主要是透過rsp間接尋址的方式拿到參數，比如先前push的`add()` int參數 是64位元，只要把當前rsp位址加上0x08就得到該參數的內存地址，就可以拿到該參數的值，如下範例將參數值放到rax中
+問題(3)主要是透過`rsp`間接尋址的方式拿到參數，比如先前push的`add()` int參數 是64位元，只要把當前`rsp`位址加上`0x08`就得到該參數的內存地址，就可以拿到該參數的值，如下範例將參數值放到`rax`中
 
 ```assembly
 movq 8(%rsp), %rax # 0x7fffffffed10 + 0x08 = 0x7fffffffed18 
 ```
 
-上述使用rsp來做間接尋址，但有個問題是在function中操作`push` `pop`這些指令會使rsp內存位置又變動，上述案例是加上0x08，如`push`就變成加上0x10之後又`pop`才會變成加上0x08，這樣會讓編譯器無法固定間接尋址偏移量，所以需要把rsp內存地址放到另外一個寄存器，也就是rbp，但是rbp也可能保存著其他重要的值，所以在利用rbp儲存rsp值之前須把rbp push進入stack做保存，這裡假設原先rbp值是10
+上述使用`rsp`來做間接尋址，但有個問題是在function中操作`push` `pop`這些指令會使`rsp`內存位置又變動，上述案例是加上`0x08`，如`push`就變成加上`0x10`之後又`pop`才會變成加上`0x08`，這樣會讓編譯器無法固定間接尋址偏移量，所以需要把`rsp`內存地址放到另外一個寄存器，也就是`rbp`，但是`rbp`也可能保存著其他重要的值，所以在利用`rbp`儲存`rsp`值之前須把`rbp` push進入stack做保存，這裡假設原先`rbp`值是10
 
 | 寄存器 | 值             |
 | ------ | -------------- |
@@ -1210,7 +1230,7 @@ pushq $1 # 放到0x7fffffffed00
 
 
 
-問題(5)當function要結束時需要把復原rsp，也就是還原到開始真正執行function邏輯前的地址，這地址在rbp上
+問題(5)當function要結束時需要把復原`rsp`，也就是還原到開始真正執行function邏輯前的地址，這地址在`rbp`上
 
 ```assembly
 movq %rbp, %rsp
@@ -1224,7 +1244,7 @@ movq %rbp, %rsp
 | 0x7fffffffed08 | 10       | 原先rbp值                  | (%rbp)   | rsp指向的內存地址 |
 | 0x7fffffffed00 | 1        | 區域變數b                  | -8(%rbp) |                   |
 
-再來也需要還原rbp調用`add()`之前的值
+再來也需要還原`rbp`調用`add()`之前的值
 
 ```assembly
 popq %rbp # 從0x7fffffffed08拿出值
@@ -1269,7 +1289,7 @@ ret # 0x401007，可以當作popq %rip
 | 0x7fffffffed08 | 10       | 原先rbp值                  | (%rbp)   |                   |
 | 0x7fffffffed00 | 1        | 區域變數b                  | -8(%rbp) |                   |
 
-上述內存結構表可知rsp回到的stack top，也就是最原先調用`add()`前的狀態，如果之後執行`result += add(4)`就會在重覆上述流程，這時`0x7fffffffed18` ~ `0x7fffffffed00`上的值就會被覆蓋，所以每次調用function所使用的stack才不會互相不受影響．其實也就是將rsp指向最初狀態的地址，這樣就還原stack
+上述內存結構表可知`rsp`回到的stack top，也就是最原先調用`add()`前的狀態，如果之後執行`result += add(4)`就會在重覆上述流程，這時`0x7fffffffed18` ~ `0x7fffffffed00`上的值就會被覆蓋，所以每次調用function所使用的stack才不會互相不受影響．其實也就是將`rsp`指向最初狀態的地址，這樣就還原stack
 
 問題(5)
 
@@ -1365,7 +1385,7 @@ Breakpoint 1, _start () at test.s:10
    0x40103a <add+18>:    retq  
 ```
 
-查看寄存器，可以看到rsp在0x7fffffffed10，rb則是0
+查看寄存器，可以看到`rsp`在`0x7fffffffed10`，`rbp`則是0
 
 ```bash
 (gdb) i r
@@ -1385,7 +1405,7 @@ rsp            0x7fffffffed10      0x7fffffffed10
 | rsp    | 0x7fffffffed10 |
 | rbp    | 0x0            |
 
-查看stack狀況，從上述得知rsp在0x7fffffffed10，代表stack從這個內存地址開始往下，0x7fffffffed18後的值可以忽略不看不在討論範圍，因為stack是向下不是向上
+查看stack狀況，從上述得知`rsp`在`0x7fffffffed10`，代表stack從這個內存地址開始往下，`0x7fffffffed18`後的值可以忽略不看不在討論範圍，因為stack是向下不是向上
 
 ```bash
 (gdb) x /32db $rsp
@@ -1395,7 +1415,7 @@ rsp            0x7fffffffed10      0x7fffffffed10
 0x7fffffffed28: -16     -18     -1      -1      -1      127     0       0
 ```
 
-這裡可以看一下0x7fffffffed10之前的值，比如從0x7fffffffed00開始看，可以看到0x7fffffffed00與0x7fffffffed08皆為空值，這兩個內存地址等等都會用到，目前都是空的
+這裡可以看一下`0x7fffffffed10`之前的值，比如從`0x7fffffffed00`開始看，可以看到`0x7fffffffed00`與`0x7fffffffed08`皆為空值，這兩個內存地址等等都會用到，目前都是空的
 
 ```bash
 (gdb) x /32db 0x7fffffffed00
@@ -1466,7 +1486,7 @@ rdi            0x0                 0
 rbp            0x0                 0x0
 rsp            0x7fffffffed00      0x7fffffffed00
 ```
-`0x7fffffffed00`呼印了golang範例所講到的會push該function下一個要執行的指令地址，0x401007就是`add $0x8,%rsp`
+`0x7fffffffed00`呼印了golang範例所講到的會push該function下一個要執行的指令地址，`0x401007`就是`add $0x8,%rsp`
 
 ```bash
 (gdb) x /8x 0x7fffffffed00
@@ -1484,7 +1504,7 @@ rsp            0x7fffffffed00      0x7fffffffed00
 | rsp    | 0x7fffffffed00 |
 | rbp    | 0x0            |
 
-執行`pushq %rbp`，因為要暫時使用rbp替代rsp做間接尋址，所以先保存rbp值等function結束後才能還原rbp值
+執行`pushq %rbp`，因為要暫時使用`rbp`替代`rsp`做間接尋址，所以先保存`rbp`值等function結束後才能還原`rbp`值
 
 ```bash
 (gdb) n
@@ -1517,7 +1537,7 @@ rsp            0x7fffffffecf8      0x7fffffffecf8
 | rsp    | 0x7fffffffecf8 |
 | rbp    | 0x0            |
 
-執行`movq %rsp, %rbp`，rbp保存rsp值以利做間接尋址
+執行`movq %rsp, %rbp`，`rbp`保存`rsp`值以利做間接尋址
 
 ```bash
 (gdb) n
@@ -1538,7 +1558,7 @@ rsp            0x7fffffffecf8      0x7fffffffecf8
 | rsp    | 0x7fffffffecf8 |
 | rbp    | 0x7fffffffecf8 |
 
-執行`movq 16(%rbp), %rax`，將fuction參數放到rax
+執行`movq 16(%rbp), %rax`，將fuction參數放到`rax`
 
 ```bash
 (gdb) n
@@ -1601,7 +1621,7 @@ rsp            0x7fffffffecf0      0x7fffffffecf0
 | 0x7fffffffecf8 | 0        | rbp原本的值                 | (%rbp)   |                   |
 | 0x7fffffffecf0 | １       | 區域變數                    | -8(%rbp) | rsp指向的內存地址 |
 
-這邊可以看到rsp與rbp已經不一樣了，rbp不會因為對stack做什麼動作而異動，方便使用間接尋址來操作stack
+這邊可以看到`rsp`與`rbp`已經不一樣了，`rbp`不會因為對stack做什麼動作而異動，所以能使用間接尋址來操作stack
 
 | 寄存器 | 值             |
 | ------ | -------------- |
@@ -1609,7 +1629,7 @@ rsp            0x7fffffffecf0      0x7fffffffecf0
 | rbp    | 0x7fffffffecf8 |
 | rax    | 0x2            |
 
-執行`addq -8(%rbp), %rax`，將區域變數加上rax(fuction 參數值) = 1 + 2 = 3
+執行`addq -8(%rbp), %rax`，將區域變數加上`rax`(fuction 參數值) = 1 + 2 = 3
 
 ```bash
 (gdb) n
@@ -1636,7 +1656,7 @@ rsp            0x7fffffffecf0      0x7fffffffecf0
 | rbp    | 0x7fffffffecf8 |
 | rax    | 0x3            |
 
-執行`movq %rbp, %rsp`，fuction要結束了需要把rsp還原到最初狀態
+執行`movq %rbp, %rsp`，fuction要結束了需要把`rsp`還原到最初狀態
 
 ```bash
 (gdb) n
@@ -1677,7 +1697,7 @@ rsp            0x7fffffffecf8      0x7fffffffecf8
 | rbp    | 0x7fffffffecf8 |
 | rax    | 0x3            |
 
-執行`popq %rbp`，fuction要結束了需要把rbp還原到最初狀態
+執行`popq %rbp`，fuction要結束了需要把`rbp`還原到最初狀態
 
 ```bash
 (gdb) n
@@ -1758,7 +1778,7 @@ rip            0x401007            0x401007 <_start+7>
 | 0x7fffffffecf8 | 0        | rbp原本的值                 | (%rbp)   |                   |
 | 0x7fffffffecf0 | １       | 區域變數                    | -8(%rbp) |                   |
 
-這邊可以看到stack內0x7fffffffed00值是0x401007，而執行完`ret`後rip值也是0x401007，所以是利用此方法改變rip再跳回原來調用`add()`的地方接下去執行
+這邊可以看到stack內`0x7fffffffed00`值是`0x401007`，而執行完`ret`後`rip`值也是`0x401007`，所以是利用此方法改變`rip`再跳回原來調用`add()`後的下一條指令
 
 | 寄存器 | 值             |
 | ------ | -------------- |
@@ -1767,7 +1787,7 @@ rip            0x401007            0x401007 <_start+7>
 | rax    | 0x3            |
 | rip    | 0x401007       |
 
-執行`addq $8, %rsp`，可以從上述表中得知rsp目前還未指向stack最一開始位置，原因是之前有把參數帶入stack，所以這邊還需把rsp往上移還原stack
+執行`addq $8, %rsp`，可以從上述表中得知`rsp`目前還未指向stack最一開始位置，原因是之前有把參數帶入stack，所以這邊還需把`rsp`往上移還原stack
 
 ```bash
 (gdb) n
@@ -1810,7 +1830,7 @@ rsp            0x7fffffffed10      0x7fffffffed10
 | rax    | 0x3            |
 | rip    | 0x401007       |
 
-到這裡就知道fuction與stack之間的關係是如何互動，fuction結束後stack內原有的值並未清空只是更改rsp，剩餘後面的指令就不多介紹都一樣只是`add()`參數不太一樣，後面指令只要再繼續執行就可以發現原有stack值都被覆蓋掉，這樣舊的stack值就不會影響現在fuction的操作
+到這裡就知道fuction與stack之間的關係是如何互動，fuction結束後stack內原有的值並未清空只是更改`rsp`，剩餘後面的指令就不多介紹都一樣只是`add()`參數不太一樣，後面指令只要再繼續執行就可以發現原有stack值都被覆蓋掉，這樣舊的stack值就不會影響現在fuction的操作
 
 
 
