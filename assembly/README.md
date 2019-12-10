@@ -21,6 +21,26 @@
 
 - [指令](#指令)
 
+  - [mov](#mov)
+  - [add](#add)
+  - [sub](#sub)
+  - [mul](#mul)
+  - [div](#div)
+  - [and](#and)
+  - [or](#or)
+  - [not](#not)
+  - [inc](#inc)
+  - [dec](#dec)
+  - [cmp](#cmp)
+  - [loop](#loop)
+  - [lea](#lea)
+  - [push](#push)
+  - [pop](#pop)
+  - [jmp](#jmp)
+  - [call](#call)
+  - [ret](#ret)
+  - [xchg](#xchg)
+
 - [標誌](#標誌)
 
 - [stack](#stack)
@@ -266,18 +286,16 @@ $2 = (void (*)()) 0x401007 <_start+7>
 
 組合語言的動作表示，指令後綴詞代表不同位元操作
 
-| 後綴詞 | 位元 |
-| ------ | ---- |
-| b      | 8    |
-| w      | 16   |
-| l      | 32   |
-| q      | 64   |
-
-Ex: movb（8位）、movw（16位）、movl（32位）、movq（64位）
+| 後綴詞 | 位元 | Data Type |      |
+| ------ | ---- | --------- | ---- |
+| b      | 8    | [1]byte   | movb |
+| w      | 16   | [2]byte   | movw |
+| l      | 32   | [4]byte   | movl |
+| q      | 64   | [8]byte   | movq |
 
 
 
-### mod
+### mov
 
 資料傳送指令，如a = b + c，將b+c結果賦予a 
 
@@ -444,7 +462,7 @@ Ex: movb（8位）、movw（16位）、movl（32位）、movq（64位）
 根據規則分別步驟如下
 
 1. `base_address`是value變數地址是`0x000000`
-   
+  
    2. `offset_address`是%rax為`0x000004`
    3. `base_address` + `offset_address` = `0x000004`
    4. `index` * `size` = 4，以十六進位表示為`0x000004`
@@ -544,15 +562,57 @@ Ex: movb（8位）、movw（16位）、movl（32位）、movq（64位）
 
 ### add
 
-
-
 ### sub
 
-
+### mul
 
 ### div
 
+### and
 
+### or
+
+### not
+
+### inc
+
+### dec
+
+### cmp
+
+
+
+### loop
+
+迴圈指令
+
+格式為: `loop <location>`
+
+實際範例如下，透過`rcx`設置迴圈次數，每跑一次loop，`rcx`就會遞減一次直到零才不會繼續跑
+
+```assembly
+.section .text
+
+.globl _start
+
+_start:
+   movq $10, %rcx
+   movq $0, %rax
+loop1:
+   addq $1, %rax
+   loop loop1
+```
+
+`rax`值為10，因為跑了10次加1
+
+```bash
+(gdb) i r $rax
+rax            0xa                 10
+```
+
+
+
+### lea
 
 ### push
 
@@ -987,56 +1047,6 @@ popq %rip
 
 
 
-
-
-### inc
-
-
-
-### dec
-
-
-
-### loop
-
-迴圈指令
-
-格式為: `loop <location>`
-
-實際範例如下，透過`rcx`設置迴圈次數，每跑一次loop，`rcx`就會遞減一次直到零才不會繼續跑
-
-```assembly
-.section .text
-
-.globl _start
-
-_start:
-   movq $10, %rcx
-   movq $0, %rax
-loop1:
-   addq $1, %rax
-   loop loop1
-```
-
-`rax`值為10，因為跑了10次加1
-
-```bash
-(gdb) i r $rax
-rax            0xa                 10
-```
-
-
-
-
-
-### and
-
-
-
-### or
-
-
-
 ### xchg
 
 交換兩個數據，交換時會lock所以效能會有所影響
@@ -1081,7 +1091,7 @@ rax            0xa                 10
 
 
 
-### cmp
+### 
 
 
 
@@ -1272,7 +1282,7 @@ ret # 0x401007，可以當作popq %rip
 | 0x7fffffffed08 | 10       | 原先rbp值                  | (%rbp)   |                   |
 | 0x7fffffffed00 | 1        | 區域變數b                  | -8(%rbp) |                   |
 
-由於先前調用`add()`有push一個int參數，所以編譯器在`result = add(2)`時除了編譯成`call add`其實後面還會多出一個動作來清除push的參數，如下組合語言
+由於先前調用`add()`有push一個int參數，所以編譯器在`result = add(2)`時除了編譯成`call add`plan9 其實後面還會多出一個動作來清除push的參數，如下組合語言
 
 ```assembly
  call add       
@@ -1830,7 +1840,7 @@ rsp            0x7fffffffed10      0x7fffffffed10
 | rax    | 0x3            |
 | rip    | 0x401007       |
 
-到這裡就知道fuction與stack之間的關係是如何互動，fuction結束後stack內原有的值並未清空只是更改`rsp`，剩餘後面的指令就不多介紹都一樣只是`add()`參數不太一樣，後面指令只要再繼續執行就可以發現原有stack值都被覆蓋掉，這樣舊的stack值就不會影響現在fuction的操作
+到這裡就知道fuction與stack之間的關係是如何互動，fuction結束後stack內原有的值並未清空只是更改`rsp`，剩餘後面的指令就不多介紹都一樣只是`add()`參數不太一樣，後面指令只要再繼續執行就可以發現原有stack值都被覆蓋掉，這樣舊的stack值就不會影響現在function的操作
 
 
 
@@ -1841,7 +1851,7 @@ rsp            0x7fffffffed10      0x7fffffffed10
 
    [汇编语言(第3版)-王爽](#https://book.douban.com/subject/25726019/) 基礎入門，使用intel寫法較簡單，我個人覺得當學習概念就好不用全懂，主要是有一個帶入感讓你覺得CPU是怎樣了解程式語言
 
-   [汇编语言程序设计](https://book.douban.com/subject/1446250/) AT&T寫法入門，跟intel相比是另一派風格也較難一點，linux主要都是AT&T 寫法，基本上這本必看，本書例子是32位元但是開發機大部分都是64位元所以給出來的範例會有少許錯誤，請自行google解決 ex: push在64與32位元上的[差異](https://stackoverflow.com/questions/5485468/x86-assembly-pushl-popl-dont-work-with-error-suffix-or-operands-invalid)，部分進階內容看不懂可以調過，畢竟只是入門學習非實際做開發
+   [汇编语言程序设计](https://book.douban.com/subject/1446250/) AT&T寫法入門，跟intel相比是另一派風格也較難一點，linux主要都是AT&T 寫法，基本上這本必看，本書例子是32位元但是現代大部分都是64位元所以給出來的範例會有少許錯誤，請自行google解決 ex: push在64與32位元上的[差異](https://stackoverflow.com/questions/5485468/x86-assembly-pushl-popl-dont-work-with-error-suffix-or-operands-invalid)，部分進階內容看不懂可以調過，畢竟只是入門學習非實際做開發
 
    
 
