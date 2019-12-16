@@ -3,7 +3,7 @@
 - [閱讀前提](#閱讀前提)
 
 - [變數](#變數)
-  - [package](#package)
+  - [symbol](#symbol)
   - [作用範圍](#作用範圍)
   - [標誌](#標誌)
   - [int](#int)
@@ -47,7 +47,7 @@ DATA ·Num+0(SB)/8,$0x4D2
 | 欄位   | 定義                                    | 值    |
 | ------ | --------------------------------------- | ----- |
 | DATA   | 宣告做變數初始化                        |       |
-| symbol | 變數名稱                                | ·Num  |
+| symbol | 連接符號(package+名稱)                  | ·Num  |
 | offset | 從SB內存地址開始偏移多少個byte          | 0     |
 | width  | 該變數使用多少byte，必須是1,2,4,8其一值 | 8     |
 | value  | 變數值                                  | 0x4D2 |
@@ -90,7 +90,7 @@ DATA ·Num+7(SB)/1,$0x00
 | 字串         | $"1234"   |
 | 變數內存地址 | $·Num(SB) |
 
-當設定完變數後如果想讓golang中也可以使用到則須定義成外部檔案也可以存取
+當設定完變數後如果想讓golang中也可以使用到則須定義成外部也可以存取
 
 定義變數規則: `GLOBL symbol(SB), width`
 
@@ -102,7 +102,7 @@ GLOBL ·Num(SB),$8
 | 欄位   | 定義                                            | 值   |
 | ------ | ----------------------------------------------- | ---- |
 | GLOBL  | 外部可以存取                                    |      |
-| symbol | 要開放外部的變數                                | ·Num |
+| symbol | 要開放給外部使用的連接符號(package+名稱)        | ·Num |
 | width  | 該變數佔用多少byte，必須是2的指數倍 2,4,8,16,32 | $8   |
 
 以下兩段golang範例分別宣告一個`Num`全域int變數以及print `Num`變數而初始值是0
@@ -151,7 +151,7 @@ GLOBL ·Num(SB),$8
 
 
 
-### package
+### symbol
 
 symbol加上 `·` = `·symbol`的意思換成`·Num`其實代表當前package內的`Num`變數，當前的package就是test，所以`·Num`指的是goalng的`test.Num`變數
 
@@ -989,6 +989,34 @@ SP當中的`symbol`，本質上沒有什麼功能只是當作一個變數的識�
 
 真SP都在低位址，所以訪問變數時以正數會當偏移量(往上找)，偽SP在高地址訪問變數時以負赴數會當偏移量(往下找)，可參考上方示意圖
 
+如下golang範例 
+
+```go
+func Add() {
+	var a int
+	var b int
+	var c int
+}
+```
+
+寫成plan9
+
+```assembly
+TEXT ·Add(SB), $24-0
+    MOVQ a-24(SP), AX   // AX = a
+    MOVQ b-16(SP), BX   // BX = b
+    MOVQ b-8(SP), CX    // CX = c
+```
+
+解釋一下為什麼plan9的`a-24` 會是golang的a變數，先看golang `func Add`變數宣告順序是`a` `b` `c`，依照stack先進先出的概念，變數內存結構會如下表格，所以`a-24` 會是golang `a`變數
+
+| 內存地址 | 變數 | SP偏移量 |
+| -------- | ---- | -------- |
+| 0x00     | a    | -24      |
+| 0x08     | b    | -16      |
+| 0x10     | c    | -8       |
+| 0x18     | SP   | 0        |
+
 
 
 ### FP
@@ -1002,6 +1030,36 @@ address與`frame pointer`數據，前者代表著該function執行完成後要�
 movq a+0(FP), AX // AX = a
 movq b+8(FP), BX // BX = b
 ```
+
+
+
+如下golang範例 
+
+```go
+func Add(a, b int) int {
+  return a + b
+} 
+```
+
+寫成plan9
+
+```assembly
+TEXT ·Add(SB), $24-0
+    MOVQ a+0(FP), AX   // AX = a
+    MOVQ b+8(FP), BX   // BX = b
+    ADDQ AX, BX // b+=a
+    MOVQ BX, ret1+16(FP)   // result
+```
+
+解釋一下為什麼plan9的`a+0` 會是golang的a變數，
+
+
+
+| 內存地址 | 變數 | FP偏移量 |
+| -------- | ---- | -------- |
+|          | b    |          |
+|          | a    |          |
+|          | FP   |          |
 
 
 
@@ -1037,7 +1095,15 @@ TEXT ·Add(SB), $0-16
 
 ## 函數
 
+格式: `TEXT symbol(SB), [flags,] $framesize[-argsize]`
 
+| 欄位      | 介紹                                           | 範例    |
+| --------- | ---------------------------------------------- | ------- |
+| TEXT      | 定義一個function                               | TEXT    |
+| Symbol    | 連接符號(package+名稱)                         | Add     |
+| flags     | 標籤                                           | NOSPLIT |
+| framesize | 該function內需要多少byte，如區域變數佔用內存量 | 0       |
+| argsize   | 該function參數與返回值需佔用多少byte           | 16      |
 
 
 
