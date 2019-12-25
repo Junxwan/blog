@@ -981,8 +981,9 @@ sp在plan9中有分成兩種，一種是真的sp等同rsp，一種是偽裝成rs
 
 但是plan9上只有一個SP要如何分辨何種情況是真何種是偽，首先操作的格式為`symbol+offset(SP)`，當無symbol時真SP，有symbol則是偽SP
 
-| a－8(SP) | 偽SP |
+| 表達方式 | 種類 |
 | -------- | ---- |
+| a－8(SP) | 偽SP |
 | 8(SP)    | 真SP |
 
 SP當中的`symbol`，本質上沒有什麼功能只是當作一個變數的識別，通常會以參數或變數名稱命名．
@@ -1003,26 +1004,33 @@ func Add() {
 
 ```assembly
 TEXT ·Add(SB), $24-0
-    MOVQ a-24(SP), AX   // AX = a
+    MOVQ a-8(SP), AX   // AX = a
     MOVQ b-16(SP), BX   // BX = b
-    MOVQ b-8(SP), CX    // CX = c
+    MOVQ c-24(SP), CX    // CX = c
 ```
 
-解釋一下為什麼plan9的`a-24` 會是golang的a變數，先看golang `func Add`變數宣告順序是`a` `b` `c`，依照stack先進先出的概念，變數內存結構會如下表格，所以`a-24` 會是golang `a`變數
+解釋一下為什麼plan9的`a-24` 會是golang的a變數，先看golang `func Add`變數宣告順序是`a` `b` `c`，依照stack先進後出的概念，變數內存結構會如下表格，所以`a-24` 會是golang `a`變數
 
-| 內存地址 | 變數 | SP偏移量 |
-| -------- | ---- | -------- |
-| 0x00     | a    | -24      |
-| 0x08     | b    | -16      |
-| 0x10     | c    | -8       |
-| 0x18     | SP   | 0        |
+```tex
+    FP   -> |-----------------| <- 0x28
+            |  return address |
+            |-----------------| <- 0x20
+            |  frame pointer  |
+    偽SP -> |-----------------| <- 0x18
+            |       a         |
+            |-----------------| <- 0x10
+            |				b	  			|
+            |-----------------| <- 0x08
+            |				c  				|
+            |-----------------| <- 0x00
+```
 
 
 
 ### FP
 
 主要操作function參數與返回值，依照上方示意圖來看FP在偽SP之上，兩者間隔`parent return
-address與`frame pointer`數據，前者代表著該function執行完成後要返回的內存地址，後者個人認為是存放偽SP資料，詳情參考[stack](https://github.com/Junxwan/blog/tree/master/assembly#stack)實例．
+address`與`frame pointer`數據，前者代表著該function執行完成後要返回的內存地址，後者個人認為是存放偽SP(rbp)的原始資料，詳情參考[stack](https://github.com/Junxwan/blog/tree/master/assembly#stack)實例．
 
 示意圖可以看出FP之上的`argumentsd`，這部分就是function參數與返回值，透過正數偏移量即可操作
 
@@ -1031,35 +1039,37 @@ movq a+0(FP), AX // AX = a
 movq b+8(FP), BX // BX = b
 ```
 
-
-
 如下golang範例 
 
 ```go
-func Add(a, b int) int {
-  return a + b
-} 
+func Add(a, b int) (c int)
 ```
 
 寫成plan9
 
 ```assembly
-TEXT ·Add(SB), $24-0
-    MOVQ a+0(FP), AX   // AX = a
-    MOVQ b+8(FP), BX   // BX = b
-    ADDQ AX, BX // b+=a
-    MOVQ BX, ret1+16(FP)   // result
+TEXT ·Add(SB), $0
+    MOVQ a+0(FP), AX  // AX = a
+    MOVQ b+8(FP), BX  // BX = b
+    ADDQ AX, BX       // b+=a
+    MOVQ BX, c+16(FP) // result
 ```
 
-解釋一下為什麼plan9的`a+0` 會是golang的a變數，
+以下解釋一下為什麼plan9的`a+0` 會是golang的a變數
 
-
-
-| 內存地址 | 變數 | FP偏移量 |
-| -------- | ---- | -------- |
-|          | b    |          |
-|          | a    |          |
-|          | FP   |          |
+```tex
+     				|-----------------| <- 0x28
+     				|        c        | 
+     				|-----------------| <- 0x20
+     				|        b        |
+     				|-----------------| <- 0x18
+     				|        a        |
+    FP   -> |-----------------| <- 0x10
+            |  return address |
+            |-----------------| <- 0x08
+            |  frame pointer  |
+    偽SP -> |-----------------| <- 0x00
+```
 
 
 
