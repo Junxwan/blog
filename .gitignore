@@ -4,3 +4,5 @@ hexo/_config.yml
 hexo/node_modules
 hexo/public
 hexo/.deploy_git/
+*.bkp
+*.dtmp
