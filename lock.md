@@ -71,7 +71,6 @@ Lock Free還必須自己實現一套算法，如果越是複雜則效能可不�
 
 涉及读写竟态资源的代码片段叫“临界区”。
 
-
 ## 範例
 Lock Free比較常用在queue這種結構上
 
@@ -106,6 +105,10 @@ CAS是Compare And Swap的缩写，直译就是比较并交换。CAS是现代CPU�
 # Wait Free
 
 # 參考
+## Lock
+1. [你说说互斥锁、自旋锁、读写锁、悲观锁、乐观锁的应用场景](https://www.cnblogs.com/xiaolincoding/p/13675202.html)
+2. [Linux 自旋锁，互斥量（互斥锁），读写锁](https://blog.51cto.com/u_15060511/4336949)
+
 ## Lock Free
 1. [对wait-free和lock-free的理解](https://zhuanlan.zhihu.com/p/342921323)
 2. [多线程编程的时候，使用无锁结构会不会比有锁结构更加快？

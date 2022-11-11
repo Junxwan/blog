@@ -1,29 +1,20 @@
-# Golang
+# golang
 
+## 效能
+- [benchmark](golang/benchmark.md)
 
+## runtime
+- [runtime](golang/runtime/README.md)
+- [plan9](golang/plan9/README.md)
 
+# OS
+- [Process v.s. Thread v.s. Coroutine](os/process_thread_coroutine.md)
+- [Lock](lock.md)
 
-以下是準備寫成文章的主題，先做個紀錄與reference
-
-寫bolg原因主要是紀錄加學習，有些主題知道原理但別人問不一定能講出細解，下列reference是已經看過的文章覺得不錯可以重覆閱讀，個人習慣重覆看兩次，第一次看了解大致方向，第二次動手研究寫成一篇自己看的懂的文章以利重覆學習，書籍也是如此．
-
-文章完成後會先公布在此再發佈至https://junxwan.github.io/
-
-長期研究主題主要是後端
-
-1. golang源碼(特別是runtime)
-
-2. Kafka源碼(broker部分)
-
-3. redis,nginx,etcd等開源專案源碼
-
-4. 資料結構
-
-5. C++相關知識
-
-6. 股票理財相關知識(基本面,技術面,籌碼面)
-
-   
+# other
+- [組合語言](assembly.md)
+- [區塊鍊](blockChain.md)
+- [ExponentialBackoff](ExponentialBackoff.md)
 
 ## TODO主題
 
